@@ -4,12 +4,25 @@
 #include <avr/sfr_defs.h>
 
 struct Display {
-    uint16_t disp_num = 0;
+    uint8_t digits[4] = { 0, 0, 0, 0 };
     uint8_t max_pos = 0;
     uint8_t pos = 0;
 
+    auto init_gpio() -> void {
+        DDRD = 0xff;
+        PORTD = 0x00;
+        DDRC = 0xff;
+        PORTC = 0x00;
+    }
+
     auto drive() -> void {
-        static const uint16_t DIVS[4] = {1, 10, 100, 1000};
+        static const uint8_t DIG_SELECT[4] = {
+            0b1000,
+            0b0100,
+            0b0010,
+            0b0001
+        };
+
         static const uint8_t SEG_MAP[10] = {
             0b00111111, // 0
             0b00000110, // 1
@@ -30,21 +43,25 @@ struct Display {
         PC3 – S4  
         */
 
+        uint8_t next = SEG_MAP[digits[this->pos]];
+        uint8_t select = DIG_SELECT[this->pos];
         PORTC = 0x00;
-        PORTD = SEG_MAP[(disp_num / DIVS[this->pos]) % 10];
-        PORTC = (1 << (3 - this->pos));
+        PORTD = next;
+        PORTC = select;
 
-        this->pos++;
-        if (this->pos > this->max_pos) {
-            this->pos = 0;
-        }
+        this->pos = this->pos >= this->max_pos ? 0 : this->pos + 1; 
 
         _delay_ms(2);
     }
 
     auto set_num(uint16_t num) -> void {
-        if (num )
-        this->disp_num = num;
+        this->digits[0] = num % 10;
+        num /= 10;
+        this->digits[1] = num % 10;
+        num /= 10;
+        this->digits[2] = num % 10;
+        num /= 10;
+        this->digits[3] = num % 10;
     }
 
     auto set_max_pos(uint8_t pos) -> void {
@@ -53,15 +70,10 @@ struct Display {
 };
 
 auto main() -> int {
-    DDRD = 0xff;
-    PORTD = 0x00;
-    DDRC = 0xff;
-    PORTC = 0x00;
-    DDRB = 0x00;
-    PORTB = 0xff;
-
     Display disp;
+    disp.init_gpio();
     disp.set_num(69);
+    disp.set_max_pos(3);
 
     while (1) {
         disp.drive();
