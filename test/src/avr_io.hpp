@@ -6,16 +6,43 @@
 
 namespace atmega_328p {
     namespace timers {
-        enum TimeUnit : uint8_t {
-            Micro = 0,
-            Sec = 1,
-            Hour = 2
+        struct TimeUnit {
+            uint8_t type;
+            uint32_t duration;
+
+            static TimeUnit micros(uint32_t duration) {
+                return TimeUnit {
+                    .type = 0,
+                    .duration = duration,
+                };
+            }
+
+            static TimeUnit millis(uint32_t duration) {
+                return TimeUnit {
+                    .type = 1,
+                    .duration = duration,
+                };
+            }
+
+            static TimeUnit secs(uint32_t duration) {
+                return TimeUnit {
+                    .type = 2,
+                    .duration = duration,
+                };
+            }
+
+            static TimeUnit hours(uint32_t duration) {
+                return TimeUnit {
+                    .type = 3,
+                    .duration = duration,
+                };
+            }
         }; 
 
         struct Timer1 {
             static void (*callback)();
 
-            static void init(TimeUnit unit, uint32_t duration, void (*cb)()) {
+            static void init(TimeUnit unit, void (*cb)()) {
                 cli();
 
                 callback = cb;
@@ -25,17 +52,17 @@ namespace atmega_328p {
                     return;
                 }
 
-                uint64_t time_us = 0;
+                uint64_t time_us = unit.duration;
 
-                switch (unit) {
-                    case Sec:
-                        time_us = (uint64_t)duration * 1000000UL;
+                switch (unit.type) {
+                    case 1:
+                        time_us *= 1000UL;
                         break;
-                    case Hour:
-                        time_us = (uint64_t)duration * 3600UL * 1000000UL;
+                    case 2:
+                        time_us *= 1000000UL;
                         break;
-                    default:
-                        time_us = duration;
+                    case 3:
+                        time_us *= (3600UL * 1000000UL);
                         break;
                 }
 

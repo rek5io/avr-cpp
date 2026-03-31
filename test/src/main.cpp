@@ -9,8 +9,7 @@ int main() {
     io::led::into_output();
 
     timers::Timer1::init(
-        timers::TimeUnit::Sec,
-        2,
+        timers::TimeUnit::millis(250),
         [](){
             io::led::toggle();
         }
