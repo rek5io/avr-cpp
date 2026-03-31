@@ -7,34 +7,29 @@
 namespace atmega_328p {
     namespace timers {
         struct TimeUnit {
-            uint8_t type;
-            uint32_t duration;
+            uint64_t duration;
 
             static TimeUnit micros(uint32_t duration) {
                 return TimeUnit {
-                    .type = 0,
-                    .duration = duration,
+                    .duration = (uint64_t)duration,
                 };
             }
 
             static TimeUnit millis(uint32_t duration) {
                 return TimeUnit {
-                    .type = 1,
-                    .duration = duration,
+                    .duration = (uint64_t)duration * 1000UL,
                 };
             }
 
             static TimeUnit secs(uint32_t duration) {
                 return TimeUnit {
-                    .type = 2,
-                    .duration = duration,
+                    .duration = (uint64_t)duration * 1000000UL,
                 };
             }
 
             static TimeUnit hours(uint32_t duration) {
                 return TimeUnit {
-                    .type = 3,
-                    .duration = duration,
+                    .duration = (uint64_t)duration * 1000000UL * 3600UL,
                 };
             }
         }; 
@@ -53,19 +48,6 @@ namespace atmega_328p {
                 }
 
                 uint64_t time_us = unit.duration;
-
-                switch (unit.type) {
-                    case 1:
-                        time_us *= 1000UL;
-                        break;
-                    case 2:
-                        time_us *= 1000000UL;
-                        break;
-                    case 3:
-                        time_us *= (3600UL * 1000000UL);
-                        break;
-                }
-
                 uint16_t prescaler_val = 1;
                 uint16_t prescaler_bits = (1 << CS10);
                 uint64_t ocr = 0;
