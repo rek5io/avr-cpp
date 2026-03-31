@@ -4,40 +4,42 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
+namespace time {
+    struct TimeUnit {
+        uint64_t duration;
+
+        static TimeUnit micros(uint32_t duration) {
+            return TimeUnit {
+                .duration = (uint64_t)duration,
+            };
+        }
+
+        static TimeUnit millis(uint32_t duration) {
+            return TimeUnit {
+                .duration = (uint64_t)duration * 1000UL,
+            };
+        }
+
+        static TimeUnit secs(uint32_t duration) {
+            return TimeUnit {
+                .duration = (uint64_t)duration * 1000000UL,
+            };
+        }
+
+        static TimeUnit hours(uint32_t duration) {
+            return TimeUnit {
+                .duration = (uint64_t)duration * 1000000UL * 3600UL,
+            };
+        }
+    }; 
+}
+
 namespace atmega_328p {
     namespace timers {
-        struct TimeUnit {
-            uint64_t duration;
-
-            static TimeUnit micros(uint32_t duration) {
-                return TimeUnit {
-                    .duration = (uint64_t)duration,
-                };
-            }
-
-            static TimeUnit millis(uint32_t duration) {
-                return TimeUnit {
-                    .duration = (uint64_t)duration * 1000UL,
-                };
-            }
-
-            static TimeUnit secs(uint32_t duration) {
-                return TimeUnit {
-                    .duration = (uint64_t)duration * 1000000UL,
-                };
-            }
-
-            static TimeUnit hours(uint32_t duration) {
-                return TimeUnit {
-                    .duration = (uint64_t)duration * 1000000UL * 3600UL,
-                };
-            }
-        }; 
-
         struct Timer1 {
             static void (*callback)();
 
-            static void init(TimeUnit unit, void (*cb)()) {
+            static void init(time::TimeUnit unit, void (*cb)()) {
                 cli();
 
                 callback = cb;
