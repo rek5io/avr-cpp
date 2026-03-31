@@ -43,24 +43,19 @@ struct Display {
         PC3 – S4  
         */
 
-        uint8_t next = SEG_MAP[digits[this->pos]];
+        uint8_t next = SEG_MAP[this->digits[this->pos]];
         uint8_t select = DIG_SELECT[this->pos];
         PORTC = 0x00;
         PORTD = next;
         PORTC = select;
 
         this->pos = this->pos >= this->max_pos ? 0 : this->pos + 1; 
-
-        _delay_ms(2);
     }
 
     auto set_num(uint16_t num) -> void {
-        this->digits[0] = num % 10;
-        num /= 10;
-        this->digits[1] = num % 10;
-        num /= 10;
-        this->digits[2] = num % 10;
-        num /= 10;
+        this->digits[0] = num % 10; num /= 10;
+        this->digits[1] = num % 10; num /= 10;
+        this->digits[2] = num % 10; num /= 10;
         this->digits[3] = num % 10;
     }
 
@@ -70,13 +65,60 @@ struct Display {
 };
 
 auto main() -> int {
+    DDRB = 0x00;
+    PORTB = 0xff;
+  
     Display disp;
     disp.init_gpio();
-    disp.set_num(69);
-    disp.set_max_pos(3);
+    disp.set_num(15);
+    disp.set_max_pos(1);
+
+    uint16_t counter = 0;
+    uint16_t secs = 15;
+    bool count = false;
+    uint8_t sw_last = 0xff;
 
     while (1) {
+        uint8_t sw_current = PINB;
+        uint8_t sw_pressed = (sw_last & ~sw_current);
+        sw_last = sw_current;
+      
         disp.drive();
+
+        if (sw_pressed & (1 << PB1) && !count) {
+            count = true;  
+        }
+        
+        if (sw_pressed & (1 << PB2) && !count) {
+            secs += 1;
+            disp.set_num(secs);
+        }
+
+        
+        if (sw_pressed & (1 << PB3) && !count) {
+            secs += 10;
+            disp.set_num(secs);
+        }
+
+        if (sw_pressed & (1 << PB0) && count) {
+            secs = 15;
+            disp.set_num(secs);
+            count = false;
+        }
+
+        if (count) {
+            if (counter >= 500) {
+                counter = 0;
+                secs -= 1;
+                disp.set_num(secs);
+                if (secs == 0) {
+                    count = false;  
+                }
+            } else {
+                counter += 1;  
+            }
+        }
+
+        _delay_ms(2);
     }
 }
-
