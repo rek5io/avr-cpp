@@ -20,15 +20,9 @@ namespace time {
             };
         }
 
-        static TimeUnit secs(uint32_t duration) {
+        static TimeUnit secs(uint16_t duration) {
             return TimeUnit {
                 .duration = (uint64_t)duration * 1000000UL,
-            };
-        }
-
-        static TimeUnit hours(uint32_t duration) {
-            return TimeUnit {
-                .duration = (uint64_t)duration * 1000000UL * 3600UL,
             };
         }
     }; 
@@ -38,6 +32,10 @@ namespace atmega_328p {
     namespace timers {
         struct Timer1 {
             static void (*callback)();
+
+            inline static void set_callback(void (*cb)()) {
+                callback = cb;
+            }
 
             static void init(time::TimeUnit unit, void (*cb)()) {
                 cli();
@@ -52,7 +50,6 @@ namespace atmega_328p {
                 uint64_t time_us = unit.duration;
                 uint16_t prescaler_val = 1;
                 uint16_t prescaler_bits = (1 << CS10);
-                uint64_t ocr = 0;
 
                 if (time_us < (uint64_t)65536 * 1 * 1000000UL / F_CPU) {
                     prescaler_val = 1;
@@ -71,7 +68,8 @@ namespace atmega_328p {
                     prescaler_bits = (1 << CS12) | (1 << CS10);
                 }
 
-                ocr = (time_us * F_CPU) / (prescaler_val * 1000000UL);
+                uint64_t ocr = (time_us * F_CPU) / (prescaler_val * 1000000UL);
+
                 if (ocr > 65535) {
                     OCR1A = 65535;
                 } else {
@@ -94,6 +92,129 @@ namespace atmega_328p {
                 Timer1::callback();
             }
         }
+    }
+
+    namespace interrupts {
+        enum TriggerMode : uint8_t {
+            LowLevel,
+            Change,
+            FallingEdge,
+            RisingEdge
+        };
+
+        template<typename P>
+        struct IInteruptPin { 
+            inline static void set_callback(void (*cb)()) {
+                P::callback = cb;
+            }
+
+            static void init(TriggerMode mode, void (*cb)()) {
+                cli();
+
+                P::callback = cb;
+
+                if (P::callback == nullptr) {
+                    sei();
+                    return;
+                }
+
+                switch (mode) {
+                    case LowLevel:
+                        P::trigger_on_low_level();
+                        break;
+
+                    case Change:
+                        P::trigger_on_change();
+                        break;
+
+                    case FallingEdge:
+                        P::trigger_on_falling_edge();
+                        break;
+
+                    case RisingEdge:
+                        P::trigger_on_rising_edge();
+                        break;
+                }
+
+                P::enable();
+
+                sei();
+            }
+        };
+
+        struct PinD2: IInteruptPin<PinD2> {
+            static void (*callback)();
+
+            inline static void enable() {
+                EIMSK |= (1 << INT0);
+            }
+
+            inline static void trigger_on_low_level() {
+                EICRA &= ~(1 << ISC01);
+                EICRA &= ~(1 << ISC00);
+            }
+
+            inline static void trigger_on_change() {
+                EICRA &= ~(1 << ISC01);
+                EICRA |= (1 << ISC00);
+            }
+
+            inline static void trigger_on_falling_edge() {
+                EICRA |= (1 << ISC01);
+                EICRA &= ~(1 << ISC00);
+            }
+
+            inline static void trigger_on_rising_edge() {
+                EICRA |= (1 << ISC01);
+                EICRA |= (1 << ISC00);
+            }
+        };
+
+        struct PinD3: IInteruptPin<PinD3> {
+            static void (*callback)();
+
+            inline static void enable() {
+                EIMSK |= (1 << INT1);
+            }
+
+            inline static void trigger_on_low_level() {
+                EICRA &= ~(1 << ISC11);
+                EICRA &= ~(1 << ISC10);
+            }
+
+            inline static void trigger_on_change() {
+                EICRA &= ~(1 << ISC11);
+                EICRA |=  (1 << ISC10);
+            }
+
+            inline static void trigger_on_falling_edge() {
+                EICRA |=  (1 << ISC11);
+                EICRA &= ~(1 << ISC10);
+            }
+
+            inline static void trigger_on_rising_edge() {
+                EICRA |=  (1 << ISC11);
+                EICRA |=  (1 << ISC10);
+            }
+        };
+
+        void (*PinD2::callback)() = nullptr;
+        void (*PinD3::callback)() = nullptr;
+
+        ISR(INT0_vect) {
+            if (PinD2::callback) {
+                PinD2::callback();
+            }
+        }
+
+        ISR(INT1_vect) {
+            if (PinD3::callback) {
+                PinD3::callback();
+            }
+        }
+
+        using d2 = PinD2;
+        using d3 = PinD3;
     }
 
     namespace io {

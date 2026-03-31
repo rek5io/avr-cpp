@@ -4,19 +4,32 @@
 namespace io = atmega_328p::io;
 
 int main() {
-    io::registers::B::into_input_pullup();
     io::led::into_output();
+    io::d2::into_input_pullup();
+    io::d3::into_input_pullup();
 
     atmega_328p::timers::Timer1::init(
-        time::TimeUnit::millis(250),
+        time::TimeUnit::secs(2),
         [](){
             io::led::toggle();
         }
     );
 
-    while (1) {
-        _delay_ms(500);
-    }
+    atmega_328p::interrupts::d2::init(
+        atmega_328p::interrupts::TriggerMode::FallingEdge,
+        [](){
+            io::led::set_low();
+        }
+    );
+
+    atmega_328p::interrupts::d3::init(
+        atmega_328p::interrupts::TriggerMode::FallingEdge,
+        [](){
+            io::led::set_high();
+        }
+    );
+
+    while (1) {}
 
     return 0;
 }
