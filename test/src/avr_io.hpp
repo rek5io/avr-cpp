@@ -102,10 +102,14 @@ namespace atmega_328p {
             RisingEdge
         };
 
-        template<typename P>
+        template<typename P, uint8_t INT, uint8_t ISC0, uint8_t ISC1>
         struct IInteruptPin { 
             inline static void set_callback(void (*cb)()) {
                 P::callback = cb;
+            }
+
+            inline static void disable() {
+                EIMSK &= ~(1 << INT);
             }
 
             static void init(TriggerMode mode, void (*cb)()) {
@@ -120,82 +124,38 @@ namespace atmega_328p {
 
                 switch (mode) {
                     case LowLevel:
-                        P::trigger_on_low_level();
+                        EICRA &= ~(1 << ISC1);
+                        EICRA &= ~(1 << ISC0);
                         break;
 
                     case Change:
-                        P::trigger_on_change();
+                        EICRA &= ~(1 << ISC1);
+                        EICRA |= (1 << ISC0);
                         break;
 
                     case FallingEdge:
-                        P::trigger_on_falling_edge();
+                        EICRA |= (1 << ISC1);
+                        EICRA &= ~(1 << ISC0);
                         break;
 
                     case RisingEdge:
-                        P::trigger_on_rising_edge();
+                        EICRA |= (1 << ISC1);
+                        EICRA |= (1 << ISC0);
                         break;
                 }
 
-                P::enable();
+                EIMSK |= (1 << INT);
 
                 sei();
             }
         };
 
-        struct PinD2: IInteruptPin<PinD2> {
+        struct PinD2: IInteruptPin<PinD2, INT0, ISC00, ISC01> {
             static void (*callback)();
-
-            inline static void enable() {
-                EIMSK |= (1 << INT0);
-            }
-
-            inline static void trigger_on_low_level() {
-                EICRA &= ~(1 << ISC01);
-                EICRA &= ~(1 << ISC00);
-            }
-
-            inline static void trigger_on_change() {
-                EICRA &= ~(1 << ISC01);
-                EICRA |= (1 << ISC00);
-            }
-
-            inline static void trigger_on_falling_edge() {
-                EICRA |= (1 << ISC01);
-                EICRA &= ~(1 << ISC00);
-            }
-
-            inline static void trigger_on_rising_edge() {
-                EICRA |= (1 << ISC01);
-                EICRA |= (1 << ISC00);
-            }
         };
 
-        struct PinD3: IInteruptPin<PinD3> {
+        struct PinD3: IInteruptPin<PinD3, INT1, ISC10, ISC11> {
             static void (*callback)();
-
-            inline static void enable() {
-                EIMSK |= (1 << INT1);
-            }
-
-            inline static void trigger_on_low_level() {
-                EICRA &= ~(1 << ISC11);
-                EICRA &= ~(1 << ISC10);
-            }
-
-            inline static void trigger_on_change() {
-                EICRA &= ~(1 << ISC11);
-                EICRA |=  (1 << ISC10);
-            }
-
-            inline static void trigger_on_falling_edge() {
-                EICRA |=  (1 << ISC11);
-                EICRA &= ~(1 << ISC10);
-            }
-
-            inline static void trigger_on_rising_edge() {
-                EICRA |=  (1 << ISC11);
-                EICRA |=  (1 << ISC10);
-            }
         };
 
         void (*PinD2::callback)() = nullptr;
@@ -304,7 +264,7 @@ namespace atmega_328p {
         }
 
         template<typename R, uint8_t BIT>
-        struct PinImpl {
+        struct IPin {
             inline static void into_output() {
                 R::ddr() |= (1<<BIT);
             }
@@ -348,26 +308,26 @@ namespace atmega_328p {
             }
         };
 
-        using d0 = PinImpl<registers::D, 0>;
-        using d1 = PinImpl<registers::D, 1>;
-        using d2 = PinImpl<registers::D, 2>;
-        using d3 = PinImpl<registers::D, 3>;
-        using d4 = PinImpl<registers::D, 4>;
-        using d5 = PinImpl<registers::D, 5>;
-        using d6 = PinImpl<registers::D, 6>;
-        using d7 = PinImpl<registers::D, 7>;
-        using d8 = PinImpl<registers::B, 0>;
-        using d9 = PinImpl<registers::B, 1>;
-        using d10 = PinImpl<registers::B, 2>;
-        using d11 = PinImpl<registers::B, 3>;
-        using d12 = PinImpl<registers::B, 4>;
-        using d13 = PinImpl<registers::B, 5>;
-        using a0 = PinImpl<registers::C, 0>;
-        using a1 = PinImpl<registers::C, 1>;
-        using a2 = PinImpl<registers::C, 2>;
-        using a3 = PinImpl<registers::C, 3>;
-        using a4 = PinImpl<registers::C, 4>;
-        using a5 = PinImpl<registers::C, 5>;
+        using d0 = IPin<registers::D, 0>;
+        using d1 = IPin<registers::D, 1>;
+        using d2 = IPin<registers::D, 2>;
+        using d3 = IPin<registers::D, 3>;
+        using d4 = IPin<registers::D, 4>;
+        using d5 = IPin<registers::D, 5>;
+        using d6 = IPin<registers::D, 6>;
+        using d7 = IPin<registers::D, 7>;
+        using d8 = IPin<registers::B, 0>;
+        using d9 = IPin<registers::B, 1>;
+        using d10 = IPin<registers::B, 2>;
+        using d11 = IPin<registers::B, 3>;
+        using d12 = IPin<registers::B, 4>;
+        using d13 = IPin<registers::B, 5>;
+        using a0 = IPin<registers::C, 0>;
+        using a1 = IPin<registers::C, 1>;
+        using a2 = IPin<registers::C, 2>;
+        using a3 = IPin<registers::C, 3>;
+        using a4 = IPin<registers::C, 4>;
+        using a5 = IPin<registers::C, 5>;
         using led = d13;
     }
 }
