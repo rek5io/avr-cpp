@@ -38,14 +38,13 @@ namespace atmega_328p {
             }
 
             static void init(time::TimeUnit unit, void (*cb)()) {
+                if (cb == nullptr) {
+                    return;
+                }
+
                 cli();
 
                 callback = cb;
-
-                if (callback == nullptr) {
-                    sei();
-                    return;
-                }
 
                 uint64_t time_us = unit.duration;
                 uint16_t prescaler_val = 1;
@@ -85,12 +84,12 @@ namespace atmega_328p {
             }
         };
 
-        void (*Timer1::callback)() = nullptr;
+        inline static void noop() {}
+
+        void (*Timer1::callback)() = noop;
 
         ISR(TIMER1_COMPA_vect) {
-            if (Timer1::callback) {
-                Timer1::callback();
-            }
+            Timer1::callback();
         }
     }
 
@@ -113,14 +112,13 @@ namespace atmega_328p {
             }
 
             static void init(TriggerMode mode, void (*cb)()) {
+                if (cb == nullptr) {
+                    return;
+                }
+
                 cli();
 
                 P::callback = cb;
-
-                if (P::callback == nullptr) {
-                    sei();
-                    return;
-                }
 
                 switch (mode) {
                     case LowLevel:
@@ -150,31 +148,26 @@ namespace atmega_328p {
             }
         };
 
-        struct PinD2: IInteruptPin<PinD2, INT0, ISC00, ISC01> {
+        using d2 = struct PinD2: IInteruptPin<PinD2, INT0, ISC00, ISC01> {
             static void (*callback)();
         };
 
-        struct PinD3: IInteruptPin<PinD3, INT1, ISC10, ISC11> {
+        using d3 = struct PinD3: IInteruptPin<PinD3, INT1, ISC10, ISC11> {
             static void (*callback)();
         };
 
-        void (*PinD2::callback)() = nullptr;
-        void (*PinD3::callback)() = nullptr;
+        inline static void noop() {}
+
+        void (*PinD2::callback)() = noop;
+        void (*PinD3::callback)() = noop;
 
         ISR(INT0_vect) {
-            if (PinD2::callback) {
-                PinD2::callback();
-            }
+            PinD2::callback();
         }
 
         ISR(INT1_vect) {
-            if (PinD3::callback) {
-                PinD3::callback();
-            }
+            PinD3::callback();
         }
-
-        using d2 = PinD2;
-        using d3 = PinD3;
     }
 
     namespace io {
