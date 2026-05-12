@@ -1,6 +1,4 @@
 #include <avr/io.h>
-#include <stdlib.h>
-#include <string.h>
 #include <util/delay.h>
 #include "LCDI2C.h"
 #include <stdio.h>
