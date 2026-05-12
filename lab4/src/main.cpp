@@ -21,7 +21,7 @@ uint16_t adc_read(uint8_t channel) {
 
     uint32_t adc = ADC;
     uint32_t mv = (adc * 5000UL) >> 10;
-    
+
     return (uint16_t)mv;
 }
 
@@ -29,22 +29,18 @@ void lcd_write_voltage(LCD_I2C *lcd, uint16_t ch0, uint16_t ch1) {
     lcd->goTo(0, 0);
 
     char buffer[32] = {0};
-    sprintf(buffer, "0:%d 1:%d       ", ch0, ch1);
+    sprintf(buffer, "0:%6d 1:%6d", ch0, ch1);
     lcd->writeText(buffer);
 }
 
 void lcd_write_status(LCD_I2C *lcd, uint8_t on) {
     lcd->goTo(0, 1);
-   
-    char buffer[32] = {0};
 
-    if (on) {    
-        sprintf(buffer, "light on   ");
+    if (on) {
+        lcd->writeText((char*)"light on  ");
     } else {
-        sprintf(buffer, "light off  ");
+        lcd->writeText((char*)"light off ");
     }
-
-    lcd->writeText(buffer);
 }
 
 static int16_t hist = 400;
