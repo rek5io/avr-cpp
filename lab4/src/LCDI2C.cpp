@@ -6,6 +6,8 @@
 */
 
 #include "LCDI2C.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 //-------------------------------------------------------------------------------------------------
 //
@@ -209,6 +211,15 @@ void LCD_I2C::writeText(char * text) {
     writeData(*text++);
 }
 
+uint8_t LCD_I2C::print(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char tmp[48] = {0};
+    int len = vsnprintf(tmp, 48, fmt, ap);
+    this->writeText(tmp);
+    va_end(ap);
+    return (uint8_t)len;
+}
 
 //-------------------------------------------------------------------------------------------------
 //

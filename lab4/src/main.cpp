@@ -1,7 +1,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "LCDI2C.h"
-#include <stdio.h>
 
 class Adc {
     public:
@@ -21,24 +20,6 @@ class Adc {
             return (uint16_t)mv;
         }
 };
-
-auto lcd_write_voltage(LCD_I2C *lcd, uint16_t ch0, uint16_t ch1) -> void {
-    lcd->goTo(0, 0);
-
-    char buffer[32] = {0};
-    sprintf(buffer, "0:%4d 1:%4d", ch0, ch1);
-    lcd->writeText(buffer);
-}
-
-auto lcd_write_status(LCD_I2C *lcd, uint8_t on) -> void {
-    lcd->goTo(0, 1);
-
-    if (on) {
-        lcd->writeText((char*)"light on  ");
-    } else {
-        lcd->writeText((char*)"light off ");
-    }
-}
 
 auto main() -> int {
     DDRB = 0xff;
@@ -68,8 +49,10 @@ auto main() -> int {
         }
 
         if (refresh_counter >= 40) {
-            lcd_write_voltage(&lcd, ch0, ch1);
-            lcd_write_status(&lcd, on);
+            lcd.goTo(0, 0);
+            lcd.print("0:%4d 1:%4d", ch0, ch1);
+            lcd.goTo(0, 1);
+            lcd.print("light %s  ", on ? "on" : "off");
             refresh_counter = 0;
         } else {
             refresh_counter++;
