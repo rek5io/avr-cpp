@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <string.h>
 #include <util/delay.h>
 #include <stdio.h>
 
@@ -19,7 +20,7 @@ class Uart {
 
         static auto println(const char *s) -> void {
             print(s);
-            Uart::println();
+            println();
         }
 
         static auto print(const char *s) -> void {
@@ -40,7 +41,7 @@ class Uart {
                 if (try_recv_char(&c) == 0) {
                     if (c == '\n' || c == '\r') {
                         if (echo) {
-                            Uart::println();
+                            println();
                         }
                         out[len] = '\0';
                         return len;
@@ -48,12 +49,12 @@ class Uart {
 
                     if (len < size - 1) {
                         if (echo) {
-                            Uart::putc_(c);
+                            putc_(c);
                         }
                         out[len++] = c;
                     } else {
                         if (echo) {
-                            Uart::println();
+                            println();
                         }
                         out[len] = '\0';
                         return len;
@@ -93,15 +94,20 @@ auto main() -> int {
 
     unsigned int year = 0;
     unsigned int check_year = 0;
+    unsigned int x = 0;
 
     while (1) {
         char line[256] = {0};
         char out[256] = {0};
 
         if (Uart::try_read_line(line, 255, 1) > 0) {
-            if (sscanf(line, "set-year %d", &year) == 1) {
+            if (sscanf(line, "set-led %u", &x) == 1) {
+                PORTB = x ? (1 << PB5) : 0x00;
+
+            } else if (sscanf(line, "set-year %d", &year) == 1) {
                 sprintf(out, ">> year set to %u", year);
                 Uart::println(out);
+
             } else if (sscanf(line, "check-year %u", &check_year) == 1) {
                 if (check_year > year) {
                     sprintf(out, ">> bad year, got %u but starting from %u", check_year, year);
@@ -126,7 +132,7 @@ auto main() -> int {
             }
         }
 
-        PORTB ^= (1 << PB5);
+        Uart::println("siemaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
         _delay_ms(100);
     }
